@@ -3,10 +3,11 @@ Kestrel Home Appliances — Service Request Routing Model
 ========================================================
 train_and_predict.py
 
+     
 This script:
 1. Loads and joins train.csv.csv with resolution_log.csv.csv
 2. Normalizes team names per ops-policy.pdf Section 5
-3. Calculates old bot misrouting cost and error rate from actual data
+3. Calculates old bot misrouting cost and error rate from actual data 
 4. Validates the new model on a stratified 80/20 split
 5. Trains the final model on all valid data
 6. Saves routing_model.pkl
