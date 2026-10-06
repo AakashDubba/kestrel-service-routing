@@ -6,7 +6,6 @@ __pycache__/
 .Python
 env/
 venv/
-.env
 .venv/
 env.bak/
 venv.bak/
@@ -34,3 +33,15 @@ scratch/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Assessment & Raw Source Data (kept locally for offline execution, untracked publicly)
+kestrel_data/
+train.csv.csv
+test_unlabelled.csv.csv
+resolution_log.csv.csv
+teams.csv.csv
+sample_submission.csv.csv
+sample_submission.csv.zip
+email-thread.txt.txt
+README.txt.txt
+ops-policy.pdf

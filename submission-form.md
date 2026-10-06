@@ -85,7 +85,7 @@ Instead, we trained against `final_team` — the team that actually closed each 
 ## 10. Repository / submission links
 
 - **GitHub repo:** https://github.com/AakashDubba/kestrel-service-routing
-- **Files included:** `train_and_predict.py`, `app.py`, `index.html`, `routing_model.pkl`, `predictions.csv`, `memo.md`, `submission-form.md`, `requirements.txt`
+- **Files included:** `train_and_predict.py`, `app.py`, `index.html`, `routing_model.pkl`, `predictions.csv`, `memo.md`, `submission-form.md`, `requirements.txt`, `optimize_model.py`, `.gitignore`
 
 ## 11. How to run
 
