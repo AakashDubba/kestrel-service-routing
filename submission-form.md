@@ -1,103 +1,208 @@
-# Banao Technologies — Task 2 Submission Form
+BANAO TECHNOLOGIES — TASK 2 SUBMISSION FORM
 
-## 1. What did you try?
+1. WHAT DID YOU TRY?
 
-I built a complete service-request routing system for Kestrel Home Appliances. The core steps were:
+I built a complete service-request routing system for Kestrel Home Appliances.
 
-- **Data join:** Joined `train.csv` (10,822 service requests with the vendor bot's `team_label`) with `resolution_log.csv` (which records `final_team` — the team that actually resolved each request). This was an inner join on `request_id` with zero data loss: all 10,822 rows matched perfectly, no duplicates, no nulls.
+I joined the training requests with the resolution log using request_id, using final_team — the team that actually resolved each ticket — as the training target. I normalized the legacy team names according to the operations policy: “Installations” became “Installs & Demo” and “Consumables” became “Filters & Consumables.”
 
-- **Team name normalization:** Applied the ops-policy.pdf Section 5 rules — "Installations" became "Installs & Demo" and "Consumables" became "Filters & Consumables" — reducing 9 raw team labels to 7 canonical teams.
+I also audited the legacy routing bot by comparing its normalized team_label against the actual final_team. The audit found 2,471 misroutes out of 10,822 comparable tickets, an error rate of 22.83%. At Rs 565 per misroute, consisting of Rs 305 in transfer cost and Rs 260 in additional customer-contact cost, this represents Rs 13,96,115 in historical misrouting cost.
 
-- **Old bot misrouting analysis:** Compared the vendor bot's `team_label` against `final_team` (both normalized). Found 2,471 misroutes out of 10,822 tickets (22.83% error rate). At Rs 565 per misroute (Rs 305 transfer cost + Rs 260 extra contact cost, from ops-policy.pdf Section 4), the total historical misrouting cost was Rs 13,96,115.
+For the replacement system, I evaluated a local TF-IDF + LinearSVC approach and optimized the text representation. The final verified model uses character-level TF-IDF with char_wb n-grams (3,6), sublinear_tf=True, and LinearSVC.
 
-- **Model training:** Built a TF-IDF (character n-grams) + LinearSVC pipeline predicting `final_team` (the resolution target, not the bot's label). Validated on a stratified 80/20 split: 84.71% accuracy, 0.8557 macro F1, 0.8492 weighted F1. Then retrained on all 10,822 rows and saved as `routing_model.pkl`.
+Using a fixed stratified 80/20 holdout, the final model achieved 84.71% accuracy, 0.8557 macro F1, and 0.8492 weighted F1.
 
-- **Test predictions:** Generated predictions for all 2,178 test requests. Output matches the `sample_submission.csv` format exactly (request_id, team), all teams are valid, no missing predictions.
+The model was then retrained on all 10,822 valid labeled records and saved as routing_model.pkl.
 
-- **API and frontend:** Built a FastAPI service (`app.py`) that loads the model at startup, exposes `/health` and `/predict` endpoints, and serves a professional dark-themed frontend (`index.html`).
+I also built a FastAPI service with /health and /predict, a frontend for testing individual requests, and generated predictions for all 2,178 test requests.
 
-## 2. What did you change?
 
-**The training target.** The task brief asks for ~90% agreement with the old routing bot. I deliberately trained against `final_team` (the team that actually closed each ticket) instead of `team_label` (the bot's original assignment). This is the critical change — the old bot is wrong 22.83% of the time, so copying it would reproduce Rs 13,96,115 in misrouting waste.
+2. WHAT DID YOU CHANGE?
 
-## 3. What did you discard?
+The most important change was the training target.
 
-- **Matching the old bot:** The 90% agreement target was a trap. The bot misroutes nearly one in four tickets. Optimizing for agreement would mean training the model to be wrong in the same ways the bot is wrong.
-- **Complex feature engineering:** I considered adding channel, product_family, warranty_status, and source as features, but the text-only pipeline already achieves 84.71% accuracy with a simple, interpretable architecture. Adding structured features would add engineering complexity with marginal gains and risk overfitting.
-- **Deep learning / LLMs:** Not needed for this problem size. A TF-IDF + LinearSVC pipeline is fast, interpretable, runs offline, costs nothing, and performs well.
+The task described a goal of approximately 90% agreement with the legacy routing bot. After comparing the bot's labels with actual resolution outcomes, I found that the legacy bot was wrong on 22.83% of tickets.
 
-## 4. What did you deliberately NOT build?
+Rather than train a new system to reproduce those errors, I changed the target from team_label to final_team, so the model learns from actual resolution outcomes.
 
-- **An LLM-based classifier** — would add API cost, latency, and a vendor dependency, defeating the purpose of replacing the paid bot.
-- **A retraining pipeline** — premature for a first deployment. Once the model is running in production, we can evaluate drift and build retraining if needed.
-- **A dashboard** — the memo communicates the key metrics. A live dashboard can follow once the model is in production.
+I also tested alternative text representations and selected the best verified configuration while keeping the evaluation set untouched.
 
-## 5. What did you build that was not explicitly requested?
 
-- **Detailed error analysis** in the training script showing the top misclassification patterns (e.g., "Installs & Demo" confused with "Repairs"), with sample misclassified texts.
-- **Team descriptions in the API response** — the `/predict` endpoint returns a `reason` field explaining which team was selected and what it handles, making the routing decision transparent to agents.
-- **Old bot misroute pattern breakdown** — the script prints the top 10 routing errors by (bot_team → actual_team), revealing that the bot systematically confuses "Billing" and "Filters & Consumables" requests with "Repairs."
+3. WHAT DID YOU DISCARD?
 
-## 6. What are the three most important things another engineer needs to know if they take over on Monday?
+I discarded the idea of optimizing primarily for agreement with the legacy bot after the evidence showed that the legacy bot was unreliable against actual resolution outcomes.
 
-1. **The model predicts `final_team`, not `team_label`.** The entire value proposition depends on this. The old bot's `team_label` is wrong 22.83% of the time. If anyone retrains against `team_label`, they will reproduce those errors and the Rs 565-per-misroute cost.
+I also evaluated additional request-time structured fields such as product, channel, and warranty information, but the text-only approach provided the strongest verified result under the evaluated setup.
 
-2. **Team names must be normalized before any comparison or training.** The ops-policy.pdf (Section 5, effective 15 Jan 2026) renamed "Installations" to "Installs & Demo" and "Consumables" to "Filters & Consumables." The raw data contains both old and new names. Without normalization, the model sees 9 classes instead of 7 and comparisons are silently wrong.
+I did not add an LLM or external inference API because the problem can be solved locally with a lightweight supervised model, avoiding external API cost and dependency.
 
-3. **The test set (`test_unlabelled.csv`) was never used for training or validation.** The 84.71% accuracy figure comes from a held-out 20% stratified split of the joined training data. The test predictions in `predictions.csv` are the model's first and only pass over unseen data.
 
-## 7. How many hours did the task actually take?
+4. WHAT DID YOU DELIBERATELY NOT BUILD?
 
-[USER TO FILL]
+I deliberately did not build an LLM-based classifier because it would add API cost, latency, and external dependency.
 
-## 8. Key metrics (verified from code execution)
+I did not build an automated retraining pipeline because this is an initial deployment and there is not yet enough production history to justify automated retraining and drift handling.
 
-| Metric | Value |
-|---|---|
-| Training rows | 10,822 |
-| Validation rows | 2,165 |
-| Final classes | 7 (Billing, Filters & Consumables, Installs & Demo, Product Advice, Repairs, Returns & Replacement, Warranty Claims) |
-| Old bot comparable tickets | 10,822 |
-| Old bot correct | 8,351 |
-| Old bot misroutes | 2,471 |
-| Old bot error rate | 22.83% |
-| Old bot accuracy | 77.17% |
-| Cost per misroute | Rs 565 |
-| Total historical misrouting cost | Rs 13,96,115 |
-| New model validation accuracy | 84.71% |
-| Macro F1 | 0.8557 |
-| Weighted F1 | 0.8492 |
-| Test predictions | 2,178 rows |
-| Prediction cost | Rs 0.00 per prediction |
-| Monthly model cost | Rs 0.00 |
-| Annual bot licence saved | Rs 3,20,000 |
+I also did not build a live operational analytics/metrics dashboard. I did build a lightweight triage UI (index.html) for support agents to test individual requests, while aggregate monitoring and drift analytics can be added after production deployment.
 
-## 9. Misroute cost discovery — why we pushed back on 90% match
 
-The task brief said: achieve approximately 90% agreement with the old routing bot. This sounds reasonable until you check the evidence.
+5. WHAT DID YOU BUILD THAT WAS NOT EXPLICITLY REQUESTED?
 
-The vendor bot misroutes 2,471 out of 10,822 tickets — a 22.83% error rate. Each misroute costs Rs 565 (Rs 305 in agent transfer time + Rs 260 in extra customer contacts, per ops-policy.pdf Section 4). That is Rs 13,96,115 in hidden costs sitting in the historical data.
+I added:
 
-If we had trained a model to match the bot at 90%+, we would be training it to replicate those errors. The model would learn that "customer paid online but item not delivered" is a Billing problem (the bot's label), when it actually needs Returns & Replacement (where it was resolved). Optimizing for agreement with a wrong system perpetuates the waste.
+- Detailed validation and error analysis to understand routing mistakes.
+- A human-readable reason field in the /predict API response.
+- Legacy-bot misrouting analysis and financial impact calculation.
+- A local support-agent triage interface.
+- A clean README with reproducibility and handover instructions.
 
-Instead, we trained against `final_team` — the team that actually closed each ticket — so the new model learns correct routing from real outcomes. The result is an 84.71% accurate model that costs Rs 0 to run and does not reproduce the bot's systematic errors.
 
-## 10. Repository / submission links
+6. WHAT ARE THE THREE MOST IMPORTANT THINGS ANOTHER ENGINEER NEEDS TO KNOW IF THEY TAKE OVER ON MONDAY?
 
-- **GitHub repo:** https://github.com/AakashDubba/kestrel-service-routing
-- **Files included:** `train_and_predict.py`, `app.py`, `index.html`, `routing_model.pkl`, `predictions.csv`, `memo.md`, `submission-form.md`, `requirements.txt`, `optimize_model.py`, `.gitignore`
+1. The model predicts final_team, not team_label. The value of this system depends on learning from actual resolution outcomes rather than reproducing the legacy bot's assignments.
 
-## 11. How to run
+2. Team-name normalization is required. The operations policy renamed “Installations” to “Installs & Demo” and “Consumables” to “Filters & Consumables.” These names must be normalized consistently before training and comparison.
 
-```bash
-# Install dependencies
+3. The test set was not used for training or validation. The reported 84.71% accuracy comes from a held-out 20% stratified validation split. The 2,178 test requests were kept separate for final prediction generation.
+
+
+7. HOW MANY HOURS DID THE TASK ACTUALLY TAKE?
+
+Approximately  5 hurs, including exploratory data analysis, model development, optimization, API development, testing, GitHub preparation, and documentation.
+
+8. WHAT SCORE DO YOU EXPECT THE HIDDEN predictions.csv TO ACHIEVE, ON WHAT METRIC, AND WHY?
+
+The final model achieved 84.71% accuracy on the untouched validation holdout against actual final_team outcomes, with a macro F1 of 0.8557.
+
+For the hidden evaluation, accuracy is the primary metric because this is a multi-class team-routing problem where each request receives one final team label.
+
+The hidden-test result is not known until Banao evaluates predictions.csv, so I will not claim a hidden-test score in advance.
+
+
+9. HOW DO YOU KNOW IT WORKS?
+
+The model was evaluated using a reproducible stratified 80/20 split, with the 20% holdout kept separate from model selection and tuning.
+
+The final verified holdout results were:
+
+Accuracy: 84.71%
+Macro F1: 0.8557
+Weighted F1: 0.8492
+Holdout errors: 331 of 2,165
+
+The API was tested directly with multiple customer requests, the frontend was verified through the running service, and predictions.csv was checked for schema, row count, missing values, and valid team names.
+
+
+10. DID YOU CHANGE, NARROW, OR PUSH BACK ON THE CLIENT'S ASK? WHAT, WHEN, AND WHY?
+
+Yes.
+
+After joining the intake data with actual resolution outcomes, I found that the legacy routing bot had an accuracy of only 77.17%, with 2,471 misroutes and an estimated historical cost of Rs 13,96,115 at Rs 565 per misroute.
+
+I therefore reassessed the requested 90% agreement target rather than treating agreement with the legacy bot as the primary definition of success.
+
+The replacement model was trained against final_team, the actual resolution outcome, rather than team_label, the legacy bot assignment.
+
+The objective was to improve routing quality against the real operational outcome rather than reproduce an existing system's known errors.
+
+
+11. WHAT IS WRONG WITH WHAT YOU ARE HANDING OVER?
+
+The final model achieves 84.71% validation accuracy, so it still makes some routing errors.
+
+The remaining errors include overlap between service categories where customer language can be ambiguous.
+
+The current implementation is also a first-deployment system and does not yet include automated production drift monitoring or an automated retraining workflow.
+
+The model runs locally with zero paid inference API cost, but future hardware and infrastructure costs are outside this calculation.
+
+
+12. WHAT DID YOU DELIBERATELY LEAVE OUT, AND WHY?
+
+I left out:
+
+- External LLM inference
+- Automated model retraining
+- Full operational analytics and drift monitoring
+
+These were intentionally excluded to keep the first deployment small, reliable, offline-capable, and focused on the core routing requirement.
+
+
+13. WHAT AI TOOLS DID YOU USE?
+
+I used ChatGPT and Antigravity IDE with Gemini/Claude-assisted coding and reasoning for implementation support, debugging, analysis, documentation, and review.
+
+The final code, metrics, predictions, and API behavior were executed and verified locally rather than being accepted solely from AI-generated output.
+
+
+14. WHAT DID YOU TRY, WHAT DID YOU CHANGE, AND WHAT DID YOU DISCARD?
+
+I started with a word-level TF-IDF + LinearSVC baseline and obtained 83.23% validation accuracy.
+
+I then tested legitimate hyperparameter changes and alternative text representations. Character-level TF-IDF improved the verified holdout result to 84.71%, which became the final configuration.
+
+I also evaluated additional structured request-time fields, but they did not provide sufficient improvement to justify replacing the simpler text-only production approach.
+
+I discarded the idea of training against team_label because the legacy bot was demonstrably unreliable against actual resolution outcomes.
+
+
+15. WHAT DID YOU BUILD THAT NOBODY EXPLICITLY ASKED FOR?
+
+I added:
+
+- Detailed legacy-bot misrouting analysis
+- Error-pattern analysis
+- A human-readable routing reason in the API
+- A local support-agent triage interface
+- A reproducible README and Monday handover documentation
+
+These additions were intended to make the system easier to evaluate, operate, and hand over.
+
+
+16. WHAT IS THE PREDICTION COST AND WHAT WOULD IT COST KESTREL'S VOLUME?
+
+The current model runs locally without a paid inference API.
+
+Prediction cost: Rs 0.00 per prediction.
+
+For the 2,178 test requests generated for this submission, the direct model inference cost is therefore Rs 0.00.
+
+At production volumes, the direct software inference cost remains Rs 0.00 per prediction. Hardware and general infrastructure costs are not included in this calculation.
+
+
+17. REPOSITORY / SUBMISSION LINKS
+
+GitHub repository:
+https://github.com/AakashDubba/kestrel-service-routing
+
+
+
+
+18. KEY VERIFIED METRICS
+
+Training records: 10,822
+Validation records: 2,165
+Final classes: 7
+Old bot accuracy: 77.17%
+Old bot error rate: 22.83%
+Old bot misroutes: 2,471
+Cost per misroute: Rs 565
+Historical misrouting cost: Rs 13,96,115
+Final model accuracy: 84.71%
+Macro F1: 0.8557
+Weighted F1: 0.8492
+Validation errors: 331
+Test predictions: 2,178
+Prediction cost: Rs 0.00
+Monthly model/software cost: Rs 0.00
+Annual legacy bot licence: Rs 3,20,000
+
+
+19. HOW TO RUN
+
 pip install -r requirements.txt
-
-# Train model and generate predictions
 python train_and_predict.py
-
-# Start the API server
 uvicorn app:app --host 0.0.0.0 --port 8000
 
-# Open browser to http://localhost:8000
-```
+Open:
+http://localhost:8000
