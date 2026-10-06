@@ -34,8 +34,7 @@ scratch/
 .DS_Store
 Thumbs.db
 
-# Assessment & Raw Source Data (kept locally for offline execution, untracked publicly)
-kestrel_data/
+# Assessment & Raw Source Data (kept locally, not tracked publicly)
 train.csv.csv
 test_unlabelled.csv.csv
 resolution_log.csv.csv
@@ -45,3 +44,8 @@ sample_submission.csv.zip
 email-thread.txt.txt
 README.txt.txt
 ops-policy.pdf
+kestrel_data/
+
+# Submission & Experiment Files (kept locally, not tracked publicly)
+submission-form.md
+optimize_model.py

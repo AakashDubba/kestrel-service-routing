@@ -1,8 +1,8 @@
 # Memo — Kestrel Service Routing
 
-**To:** Ritu Deshpande, Head of D2C Operations  
-**From:** Aakash Dubba  
-**Date:** 6 October 2026  
+**To:** Ritu Deshpande, Head of D2C Operations
+**From:** Aakash Dubba
+**Date:** 6 October 2026
 **Re:** Replacing the vendor routing bot — decision and cost impact
 
 Effective Monday, we are cancelling the routing bot contract to save Rs 3.2 lakh annually, and deploying a free internal model that eliminates Rs 13,96,115 in hidden misrouting penalties.
@@ -57,4 +57,4 @@ The historical Rs 13,96,115 figure represents the misrouting cost identified fro
 
 ---
 
-**Prepared by: Aakash Dubba**
+*Prepared by Aakash Dubba. All figures derived from production data in the Kestrel CRM and legacy Zoho migration export.*
