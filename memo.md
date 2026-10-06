@@ -1,6 +1,6 @@
 # Memo — Kestrel Service Routing
 
-**To:** Ritu Deshpande, Head of D2C Operations
+**To:** Ritu Deshpande, Head of D2C Operations 
 **From:** Aakash Dubba
 **Date:** 6 October 2026
 **Re:** Replacing the vendor routing bot — decision and cost impact
