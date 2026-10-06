@@ -26,9 +26,9 @@ The audit showed that the legacy bot was frequently assigning requests to the wr
 
 ## What we built
 
-We trained the replacement model against the actual resolution outcome — the team that ultimately resolved the request — rather than the legacy bot's original assignment.
+We trained the replacement model using the actual team that ultimately resolved each request, rather than simply reproducing the legacy bot's original assignment.
 
-The final model uses character-level text features with a local LinearSVC classifier. It operates without an external AI API or paid inference service.
+The replacement model uses patterns in customer request text and runs locally without an external AI API or paid inference service.
 
 | Validation metric | Result |
 |---|---:|
@@ -46,7 +46,7 @@ The task brief asked for approximately 90% agreement with the vendor bot. We rea
 
 The legacy system was wrong on 22.83% of the tickets analysed. Optimizing primarily for agreement with that system would risk reproducing errors that were already present.
 
-We therefore trained against `final_team` — the actual resolution outcome — so that the replacement model is evaluated on the operational result rather than on the legacy system's assumptions.
+We therefore trained the replacement against the actual resolution outcome — the team that ultimately handled each request — so that the system is evaluated on the operational result rather than on the legacy system's assignments.
 
 ## Next week
 
