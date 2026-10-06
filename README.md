@@ -105,14 +105,15 @@ The root endpoint (`GET /`) serves a single-page triage interface (`index.html`)
 
 | File | Description |
 |---|---|
-| `train_and_predict.py` | Training, validation, model serialization, and test prediction generation. |
+| `.gitignore` | Exclusion rules for raw data, caches, and local-only files. |
+| `README.md` | Project documentation and evaluation report. |
 | `app.py` | FastAPI application exposing `/health` and `/predict` endpoints and serving the frontend. |
 | `index.html` | Single-page triage interface for support agents. |
-| `routing_model.pkl` | Serialized scikit-learn pipeline (TF-IDF + LinearSVC). |
-| `predictions.csv` | Predictions for the 2,178 test requests (`request_id`, `team`). |
 | `memo.md` | Business memorandum summarising the audit findings and deployment plan. |
+| `predictions.csv` | Predictions for the 2,178 test requests (`request_id`, `team`). |
 | `requirements.txt` | Python dependencies. |
-| `.gitignore` | Exclusion rules for raw data, caches, and local-only files. |
+| `routing_model.pkl` | Serialized scikit-learn pipeline (TF-IDF + LinearSVC). |
+| `train_and_predict.py` | Training, validation, model serialization, and test prediction generation. |
 
 ## How to Run
 
