@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kestrel Home Appliances — Internal service request routing tool powered by machine learning.">
+    <title>Kestrel Service Router</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-card: #1a1d28;
+            --bg-input: #12141d;
+            --border-color: #2a2d3a;
+            --border-focus: #6c63ff;
+            --text-primary: #e8e9ed;
+            --text-secondary: #9a9caa;
+            --text-muted: #6b6e7d;
+            --accent: #6c63ff;
+            --accent-hover: #5a52e0;
+            --accent-glow: rgba(108, 99, 255, 0.25);
+            --success: #34d399;
+            --success-bg: rgba(52, 211, 153, 0.1);
+            --success-border: rgba(52, 211, 153, 0.25);
+            --gradient-start: #6c63ff;
+            --gradient-end: #a855f7;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .logo-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.4rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(108, 99, 255, 0.15);
+        }
+
+        .card-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Button */
+        .btn-predict {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.85rem 1.5rem;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .btn-predict:active {
+            transform: translateY(0);
+        }
+
+        .btn-predict:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-predict svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Result */
+        .result-card {
+            display: none;
+            animation: fadeSlideIn 0.4s ease;
+        }
+
+        .result-card.visible {
+            display: block;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-team {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .result-team-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--success);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .result-team-icon svg {
+            width: 20px;
+            height: 20px;
+            color: var(--bg-primary);
+        }
+
+        .result-team-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .result-team-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .result-reason {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            padding: 0 0.25rem;
+        }
+
+        /* Error */
+        .error-msg {
+            display: none;
+            padding: 0.85rem 1.25rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 12px;
+            color: #f87171;
+            font-size: 0.88rem;
+            animation: fadeSlideIn 0.3s ease;
+        }
+
+        .error-msg.visible {
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .footer span {
+            color: var(--text-secondary);
+        }
+
+        /* Status dot */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            margin-right: 0.35rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            body { padding: 1.25rem 0.75rem; }
+            .card { padding: 1.25rem; }
+            .header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Kestrel Internal
+            </div>
+            <h1>Service Request Router</h1>
+            <p>Route customer requests to the right team using AI trained on resolved cases.</p>
+        </div>
+
+        <!-- Input Card -->
+        <div class="card" id="input-card">
+            <label class="card-label" for="request-text">Customer Message</label>
+            <textarea
+                id="request-text"
+                placeholder="Paste a customer service request here&#10;&#10;Example: My water purifier is making a strange noise and leaking from the bottom. I bought it three months ago."
+                spellcheck="false"
+            ></textarea>
+            <button class="btn-predict" id="predict-btn" onclick="predict()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4"/>
+                    <path d="M12 8h.01"/>
+                </svg>
+                Route Request
+            </button>
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="error-msg"></div>
+
+        <!-- Result Card -->
+        <div class="card result-card" id="result-card">
+            <label class="card-label">Routing Result</label>
+            <div class="result-team">
+                <div class="result-team-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="result-team-label">Assigned Team</div>
+                    <div class="result-team-name" id="result-team"></div>
+                </div>
+            </div>
+            <p class="result-reason" id="result-reason"></p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="status-dot"></span>
+            Model running locally &mdash; <span>Rs 0.00 per prediction</span>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.getElementById('request-text');
+        const btn = document.getElementById('predict-btn');
+        const resultCard = document.getElementById('result-card');
+        const resultTeam = document.getElementById('result-team');
+        const resultReason = document.getElementById('result-reason');
+        const errorMsg = document.getElementById('error-msg');
+
+        async function predict() {
+            const text = textarea.value.trim();
+            if (!text) {
+                showError('Please enter a customer service request to route.');
+                return;
+            }
+
+            // Disable and show spinner
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Routing...';
+            hideError();
+            resultCard.classList.remove('visible');
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status);
+                }
+
+                const data = await response.json();
+                resultTeam.textContent = data.team;
+                resultReason.textContent = data.reason;
+                resultCard.classList.add('visible');
+            } catch (err) {
+                showError('Failed to reach the routing API. Check that the server is running. (' + err.message + ')');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+                    Route Request
+                `;
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('visible');
+        }
+
+        // Allow Ctrl+Enter to submit
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                predict();
+            }
+        });
+    </script>
+</body>
+</html>
