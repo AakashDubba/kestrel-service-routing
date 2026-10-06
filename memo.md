@@ -55,6 +55,4 @@ We therefore trained the replacement against the actual resolution outcome — t
 
 The historical Rs 13,96,115 figure represents the misrouting cost identified from the legacy bot's observed errors. The Rs 3.2 lakh figure represents the annual vendor licence cost that can be avoided if the legacy contract is cancelled.
 
----
-
-*Prepared by Aakash Dubba. All figures derived from production data in the Kestrel CRM and legacy Zoho migration export.*
+Prepared by: Aakash Dubba
