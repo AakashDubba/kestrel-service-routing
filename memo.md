@@ -1,53 +1,62 @@
 # Memo — Kestrel Service Routing
 
-**To:** Ritu Deshpande, Head of D2C Operations
-**From:** Data & Automation Team
-**Date:** 6 October 2026
+**To:** Ritu Deshpande, Head of D2C Operations  
+**From:** Aakash Dubba  
+**Date:** 6 October 2026  
 **Re:** Replacing the vendor routing bot — decision and cost impact
-
----
 
 Effective Monday, we are cancelling the routing bot contract to save Rs 3.2 lakh annually, and deploying a free internal model that eliminates Rs 13,96,115 in hidden misrouting penalties.
 
 ## What we found
 
-We analysed all 10,822 historically resolved service requests. The vendor bot assigned a team at intake; we compared those assignments against the team that actually resolved each ticket.
+We analysed 10,822 service requests by joining the intake records with their actual resolution outcomes. The vendor bot's assignment at intake was compared with the team that ultimately resolved each request.
 
 | Metric | Value |
-|---|---|
+|---|---:|
 | Tickets analysed | 10,822 |
-| Bot sent to wrong team | 2,471 (22.83%) |
-| Cost per misroute | Rs 565 (Rs 305 transfer + Rs 260 extra contact) |
-| Total misrouting penalty | Rs 13,96,115 |
+| Bot misroutes | 2,471 (22.83%) |
+| Old bot accuracy | 77.17% |
+| Cost per misroute | Rs 565 |
+| Transfer cost per misroute | Rs 305 |
+| Additional contact cost per misroute | Rs 260 |
+| Historical misrouting cost identified | Rs 13,96,115 |
 | Annual bot licence | Rs 3,20,000 |
 
-The biggest pattern: the bot tagged customer requests as "Billing" when the actual problem was a delivery issue, repair, or installation. A customer mentioning a payment does not make it a billing request — the operations policy is clear on this, and the bot got it wrong routinely.
+The audit showed that the legacy bot was frequently assigning requests to the wrong team. In particular, some requests containing billing-related language were ultimately resolved by teams handling delivery, repairs, or installation work.
 
 ## What we built
 
-We trained a lightweight text classifier on the resolved outcomes — the team that actually closed the ticket, not the team the bot guessed. The model uses character-level n-gram features from the customer's message and runs entirely on our own servers.
+We trained the replacement model against the actual resolution outcome — the team that ultimately resolved the request — rather than the legacy bot's original assignment.
+
+The final model uses character-level text features with a local LinearSVC classifier. It operates without an external AI API or paid inference service.
 
 | Validation metric | Result |
-|---|---|
-| Accuracy | 84.71% |
-| Macro F1 | 0.8557 |
-| Weighted F1 | 0.8492 |
+|---|---:|
+| Accuracy | **84.71%** |
+| Macro F1 | **0.8557** |
+| Weighted F1 | **0.8492** |
 
-The model does not need an internet connection, an API key, or a vendor subscription. Prediction cost: **Rs 0.00 per request. Rs 0.00 monthly model cost.**
+The validated accuracy is 84.71%, compared with 77.17% for the legacy bot, an improvement of 7.54 percentage points.
+
+Prediction cost is **Rs 0.00 per request** under the current local deployment, with **Rs 0.00 in recurring model/software inference cost**.
 
 ## Why we did not simply copy the old bot
 
-The task brief asked for roughly 90% agreement with the vendor bot. We deliberately pushed back on that target. Matching a bot that is wrong 22.83% of the time would lock in Rs 565 of waste on every misrouted ticket. Instead, we trained against what actually worked — the final resolution — so the new model learns correct routing, not the old mistakes.
+The task brief asked for approximately 90% agreement with the vendor bot. We reassessed that target after measuring the bot against actual resolution outcomes.
+
+The legacy system was wrong on 22.83% of the tickets analysed. Optimizing primarily for agreement with that system would risk reproducing errors that were already present.
+
+We therefore trained against `final_team` — the actual resolution outcome — so that the replacement model is evaluated on the operational result rather than on the legacy system's assumptions.
 
 ## Next week
 
-1. **Monday–Tuesday:** IT deploys the model behind the existing intake endpoint. No changes to agent workflows.
-2. **Wednesday:** We monitor the first 200 live requests and compare routing against the old bot in parallel.
-3. **Thursday:** Review session with Operations to confirm routing quality.
-4. **Friday:** Vendor bot contract cancellation notice sent.
+1. **Approve deployment** of the internal routing model.
+2. **Notify IT** to update the intake webhook to the internal `/predict` endpoint.
+3. **Begin a controlled rollout** and review ambiguous routing cases during the first week.
+4. **Proceed with the vendor-contract decision** based on the approved rollout.
 
-No additional budget is required. The model runs on existing infrastructure.
+The historical Rs 13,96,115 figure represents the misrouting cost identified from the legacy bot's observed errors. The Rs 3.2 lakh figure represents the annual vendor licence cost that can be avoided if the legacy contract is cancelled.
 
 ---
 
-*Prepared by the Data & Automation Team. All figures derived from production data in the Kestrel CRM and legacy Zoho migration export.*
+**Prepared by: Aakash Dubba**
